@@ -59,3 +59,37 @@ https://docs.ansible.com/ansible/latest/network/getting_started/basic_concepts.h
 ## Ansible agent node(s)
 
 ## Adhoc commands
+
+## Inventory
+The 'inverntory' refers to where we can define the hosts and groups of hosts upon which commands, modules and tasks in a playbook can operate. Most of the time this file is written in YAML. By deafult it goes into the hosts directory:
+/etc/ansible/hosts
+However, you can create project specific inverntory files in other locations.
+
+The inventory itself is just a list of host machines. we tend to group them because they have something in common. In practiccce the groups are often running the exact same environment and are in the same place (for example one of our groups may be 'EU-DBs').
+
+![Alt text](/images/example_inventory.png "A sample inventory")
+
+More detial can be found in the official documentation:
+https://docs.ansible.com/ansible/latest/user_guide/intro_inventory.html 
+
+## Ansible roles
+Roles enable us to reuse and share our Ansible code efficiently. They provide a well-defined framework and structure for setting your tasks, variables, handlers, metadata, templates, and other files. This way, we can reference and call them in our playbooks with just a few lines of code while we can reuse the same roles over many projects without the need to duplicate our code.#
+
+Via: https://spacelift.io/blog/ansible-roles
+
+Diagram to visualise roles:
+![Alt text](/images/ansible_roles.jpg "How roles work")
+
+
+Refer to:
+https://docs.ansible.com/ansible/latest/user_guide/playbooks_reuse_roles.html
+For more information on Ansible roles
+
+## Modules
+Modules (also referred to as “task plugins” or “library plugins”) are discrete units of code that can be used from the command line or in a playbook task. Ansible executes each module, usually on the remote managed node, and collects return values. In Ansible 2.10 and later, most modules are hosted in collections.
+
+Via: https://docs.ansible.com/ansible/latest/user_guide/modules_intro.html
+Use this link for further detail.
+
+Every single current Ansible module:
+https://docs.ansible.com/ansible/2.9/modules/list_of_all_modules.html 
