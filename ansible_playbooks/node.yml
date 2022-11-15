@@ -1,0 +1,18 @@
+# Yaml files start with ---
+
+---
+# Create a script to configure nginx in the web server
+
+# Who is the host - means name of the server
+- hosts: web
+
+# Gather data
+  gather_facts: yes
+
+# We need admin access - sudo
+  become: true
+
+# Add the actual instructions
+  tasks:
+  - name: Install npm on web-VM so we can run the Sparta app
+    apt: pkg=npm state=present

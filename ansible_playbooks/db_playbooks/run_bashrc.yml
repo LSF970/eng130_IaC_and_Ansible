@@ -1,0 +1,14 @@
+---
+  ## host is db machine
+
+- hosts: web
+
+  # enable -vvv data
+  gather_facts: yes
+
+  # admin access
+  become: true
+
+  tasks:
+  - name: run .bashrc to create the env variable
+    shell: . /home/vagrant/.bashrc

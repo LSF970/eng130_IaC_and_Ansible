@@ -1,0 +1,14 @@
+---
+  ## host is db machine
+
+- hosts: db
+
+  # enable -vvv data
+  gather_facts: yes
+
+  # admin access
+  become: true
+
+  tasks:
+  - name: restart mongodb
+    service: name=mongodb state=restarted

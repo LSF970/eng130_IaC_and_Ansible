@@ -1,0 +1,21 @@
+---
+  ## host is db machine
+
+- hosts: db
+
+  # enable -vvv data
+  gather_facts: yes
+
+  # admin access
+  become: true
+
+  tasks:
+  - name: Replace a localhost entry with our own
+    lineinfile:
+      path: /etc/mongodb.conf
+
+      regexp: "bind_ip = 127.0.0.1"
+
+      line: "bind_ip: 0.0.0.0"
+      state: present
+      backup: yes

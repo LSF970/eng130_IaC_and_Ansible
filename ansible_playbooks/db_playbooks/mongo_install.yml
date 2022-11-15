@@ -1,0 +1,16 @@
+---
+  ## host is db machine
+
+- hosts: db
+
+  # enable -vvv data
+  gather_facts: yes
+
+  # admin access
+  become: true
+
+  tasks:
+  - name: install mongodb
+    apt:
+      name: mongodb
+      state: present

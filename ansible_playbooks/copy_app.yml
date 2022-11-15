@@ -1,0 +1,27 @@
+#  Yaml files start with ---
+
+---
+# Create a script to configure nginx in the web server
+
+# Who is the host - means name of the server
+- hosts: web
+
+# Gather data
+  gather_facts: yes
+
+# We need admin access - sudo
+  become: true
+
+# Add the actual instructions
+  tasks:
+  - name: Copy app from localhost to the web server using ansible controller
+    copy:
+      src: /home/vagrant/app
+      dest: /home/vagrant
+
+  - name: Copy app from localhost to the web server using ansible controller
+    copy:
+      src: /home/vagrant/app/models
+      dest: /home/vagrant/app
+
+# Ensure at the end of the script the status of nginx is active(running)

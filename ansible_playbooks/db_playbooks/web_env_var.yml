@@ -1,0 +1,20 @@
+
+---
+  ## host is db machine
+
+- hosts: web
+
+  # enable -vvv data
+  gather_facts: yes
+
+  # admin access
+  become: true
+
+  tasks:
+  - name: Add DB_HOST env variable to .bashrc file
+    lineinfile:
+      path: .bashrc
+
+      line: "DB_HOST=mongodb://192.168.33.11:27017/posts"
+      state: present
+      backup: yes

@@ -1,0 +1,14 @@
+---
+  ## host is db machine
+
+- hosts: db
+
+  # enable -vvv data
+  gather_facts: yes
+
+  # admin access
+  become: true
+
+  tasks:
+  - name: insaall mongodb
+    apt: pkg=mongodb state=present
