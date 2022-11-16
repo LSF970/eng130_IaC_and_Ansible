@@ -103,17 +103,21 @@ https://docs.ansible.com/ansible/2.9/modules/list_of_all_modules.html
 - Install awscli - `pip3 install awscli` 
 - Install boto3 - `pip3 install boto boto3` (importing boto3 from boto)
 - `sudo apt-get upgrade -y`
-- Add specific line to point to correct directory for Python3
+- Add specific line to point to correct directory for Python3 in /etc/ansible/hosts
 ```
 [local]
 localhost ansible_python_interpreter=/usr/bin/python3
 ```
 - Make ansible vault default folder structure `/etc/ansible/group_vars/all`
 - Make ansible vault file `sudo ansible-vault create pass.yml` (this will be vim)
+- Add line `aws_access_key: key_goes_here`
+- Add second line `aws_secret_key: key_goes_here`
+- Hit `Esc` to get out of input mode, then `:` then write `wq!` and hit enter. This saves the changes. 
 - Check to see if saved `sudo cat pass.yml` contents will be hashed
 - Change permissions on key `sudo chmod 666 pass.yml`
 - Now navigate to .ssh directory
 - Generate new key pair: `ssh-keygen -t rsa -b 4096"`
+- Call this pair something sensible, ansible_aws_key for example
 - Then go to your localhost and copy the .pem file for aws to controller
 - `scp eng130.pem vagrant@192.168.33.12:.ssh`
 - add aws to hosts file (comment as not created yet)
