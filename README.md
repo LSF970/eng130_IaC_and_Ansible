@@ -78,6 +78,7 @@ Roles enable us to reuse and share our Ansible code efficiently. They provide a 
 Via: https://spacelift.io/blog/ansible-roles
 
 Diagram to visualise roles:
+
 ![Alt text](/images/ansible_roles.jpg "How roles work")
 
 
@@ -93,3 +94,166 @@ Use this link for further detail.
 
 Every single current Ansible module:
 https://docs.ansible.com/ansible/2.9/modules/list_of_all_modules.html 
+
+
+## Moving from on-prem ansible to hybrid ansible
+
+- Install Python 3 - `sudo apt install python3`
+- Install pip - `sudo apt install python3-pip`
+- Install awscli - `pip3 install awscli` 
+- Install boto3 - `pip3 install boto boto3` (importing boto3 from boto)
+- `sudo apt-get upgrade -y`
+- Add specific line to point to correct directory for Python3
+```
+[local]
+localhost ansible_python_interpreter=/usr/bin/python3
+```
+- Make ansible vault default folder structure `/etc/ansible/group_vars/all`
+- Make ansible vault file `sudo ansible-vault create pass.yml` (this will be vim)
+- Check to see if saved `sudo cat pass.yml` contents will be hashed
+- Change permissions on key `sudo chmod 666 pass.yml`
+- Now navigate to .ssh directory
+- Generate new key pair: `ssh-keygen -t rsa -b 4096"`
+- Then go to your localhost and copy the .pem file for aws to controller
+- `scp eng130.pem vagrant@192.168.33.12:.ssh`
+- add aws to hosts file (comment as not created yet)
+```
+# [aws]
+# ec2-instance ansible_host=ec2-ip ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/eng130.pem
+```
+- Make create_ec2.yml file in /etc/ansible
+- Add inital code:
+```
+---
+- hosts: localhost
+  connection: local
+  gather_facts: True
+  become: True
+```
+- Save and run `sudo ansible-playbook create_ec2.yml --ask-vault-pass --tags create_ec2`
+- Connection to localhost should be successful
+-  Now add the rest of the yaml script:
+
+```
+# AWS playbook
+---
+
+- hosts: localhost
+  connection: local
+  gather_facts: False
+
+  vars:
+    key_name: eng130_aws #(The key you made earlier)
+    region: eu-west-1
+    image: ami-00f499a80f4608e1b
+    id: "web-app-luke-test"
+    sec_group: "sg-071aeef24c2dcae1b"
+    subnet_id: "subnet-0429d69d55dfad9d2"
+   #  ansible_python_interpreter: .local/lib/python3
+
+  tasks:
+
+    - name: Facts
+      block:
+
+      - name: Get instances facts
+        ec2_instance_facts:
+          aws_access_key: "{{aws_access_key}}"
+          aws_secret_key: "{{secret_key}}"
+          region: "{{ region }}"
+        register: result
+
+      - name: Instances ID
+        debug:
+          msg: "ID: {{ item.instance_id }} - State: {{ item.state.name }} - Public DNS: {{ item.public_dns_name }}"
+        loop: "{{ result.instances }}"
+
+      tags: always
+
+
+    - name: Provisioning EC2 instances
+      block:
+
+      - name: Upload public key to AWS
+        ec2_key:
+          name: "{{ key_name }}"
+          key_material: "{{ lookup('file', '~/.ssh/{{ key_name }}.pub') }}"
+          region: "{{ region }}"
+          aws_access_key: "{{aws_access_key}}"
+          aws_secret_key: "{{secret_key}}"
+
+          
+      - name: Provision instance(s)
+        ec2:
+          aws_access_key: "{{aws_access_key}}"
+          aws_secret_key: "{{secret_key}}"
+          assign_public_ip: true
+          key_name: "{{ key_name }}"
+          id: "{{ id }}"
+          vpc_subnet_id: "{{ subnet_id }}"
+          group_id: "{{ sec_group }}"
+          image: "{{ image }}"
+          instance_type: t2.micro
+          region: "{{ region }}"
+          wait: true
+          count: 1
+          instance_tags:
+            Name: eng130_luke_ansible
+
+      tags: ['never', 'create_ec2']
+```
+
+The most important part of this script is where we set up our vars. Check these over and edit the values according to your setup and aws. After this nothin needs to be changed other than the instance tag: Name. This will be your EC2 name in aws so make it unique and follow naming conventions.
+
+## Adding localhost to hosts file
+- In order to run this playbook, we need to ad our localhost into the hosts file. For our first run of create_ec2.yml we will use the passord, aftr that we will need the public key (eng_aws)
+```
+[aws]
+192.168.33.12 ansible_connection=ssh ansible_ssh_user=vagrant ansible_ssh_pass=vagrant
+```
+
+## Run the playbook.
+- Run `sudo ansible-playbook create_ec2.yml --ask-vault-pass --tags create_ec2`
+- Note, we have to add `--ask-vault-pass` now Ansible Vault is set up
+- We also need `--tags create_ec2` otherwise the task will not run, it will just check the connection to AWS
+- All being well, the playbook should run and create an EC2 instance for you
+- Go to AWS and check this is the case. Also, add the controller's i.p to the SG being used, so it can SSH in. For testing you can use 0.0.0.0 to make sure all is well, but do not do this in production.
+
+## Change our hosts file again
+- Now we have an instance, we need to comment out our localhost line and add a line so Ansible can SSH with the new EC2 instance (using the public key specified in the create_ec2.yml playbook):
+```
+[aws]
+# 192.168.33.12 ansible_connection=ssh ansible_ssh_user=vagrant ansible_ssh_pass=vagrant
+
+ec2-instance ansible_host=54.171.133.250 ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/eng130_aws
+```
+
+# Run update and upgrade before we do anything
+- Run adhoc command `sudo ansible aws -a "sudo apt update -y" --ask-vault-pass`
+- Run adhoc command `sudo ansible aws -a "sudo apt upgrade -y" --ask-vault-pass`
+- Note, we need the ``--ask-vault-pass` now aas we set up the Ansible Vault for all our work with Ansible.
+
+## Change the configure_nginx.yml to work for aws
+- All we need to do here is change the hosts this palybook tells ansible to use:
+```
+# Yaml files start with ---
+
+---
+# Create a script to configure nginx in the web server
+
+# Who is the host - means name of the server
+- hosts: aws
+
+# Gather data
+  gather_facts: yes
+
+# We need admin access - sudo
+  become: true
+
+# Add the actual instructions
+  tasks:
+  - name: Install/configure Nginx Web Server in web-VM
+    apt: pkg=nginx state=present
+
+# Ensure at the end of the script the status of nginx is active(running)
+```
