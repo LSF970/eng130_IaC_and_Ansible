@@ -17,8 +17,7 @@ provider "aws" {
 # Add vpc
 resource "aws_vpc" "terraform_vpc_code_test" {
   cidr_block       = "10.0.0.0/16"
-  instance_tenancy = "default"
-
+  
   tags = {
     Name = "eng130-luke-terraform-vpc-test"
   }
@@ -36,8 +35,9 @@ resource "aws_internet_gateway" "app" {
 # add subnet to vpc
 resource "aws_subnet" "app_subnet" {
   vpc_id = aws_vpc.terraform_vpc_code_test.id
-  cidr_block = "10.0.13.0/24"
+  cidr_block = "10.0.10.0/24"
   availability_zone = "eu-west-1a"
+  map_public_ip_on_launch = "true"
   tags = {
     Name = "eng130-luke-terraform"
   }
@@ -48,6 +48,15 @@ resource "aws_security_group" "app"  {
   description = "Testing Terraform"
   vpc_id = aws_vpc.terraform_vpc_code_test.id
 # Inbound rules
+ # SSH from anywhere
+  ingress {
+      description = "SSH"
+      from_port   = 22
+      to_port     = 22
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+
   ingress {
     from_port       = "80"
     to_port         = "80"
@@ -82,6 +91,12 @@ resource "aws_route_table" "app" {
   }
 }
 
+resource "aws_route_table_association" "eng130-luke_terraform_rt_association"{
+  subnet_id = aws_subnet.app_subnet.id
+  route_table_id = aws_route_table.app.id
+}
+
+
 # EC2 creation
 resource "aws_instance" "app_instance" {
   ami           = var.web_app_ami_id
@@ -91,9 +106,7 @@ resource "aws_instance" "app_instance" {
   associate_public_ip_address = true
   key_name      = var.aws_key_name
   tags = {
-      Name = "eng130-luke-terraform-app"    
+      Name = var.name  
   }
   
 }
-
-

@@ -25,6 +25,51 @@ Install Terraform choco install terraform
 
 Check installation terraform --version
 
+# Setting up the file strucutre for Terraform
+We need to set up the correct file structure, so Terraform can do it's thing. Create a folder called `terraform` with `mkdir`, go into it and make two files `main.tf` and `variables.tf`
+```
+mkdir terraform
+cd terraform
+touch main.tf variables.tf
+```
+
+The main.tf file is where we are going to write our actual config, the variables file will contain any arguements we would like to pass to the script or any default values. This makes our script more secure and cleaner.
+
+# Providers
+First we need to tell Terraform which cloud service and data-center to use:
+```
+provider "aws" {
+  region = "eu-west-1"
+}
+```
+Terraform is quite a light system, but we still need to pull some dependencies now we have specified our cloud provider. Exit the main.tf file and run:
+
+```
+terraform init
+```
+# Creating resources
+Ok, back to main.tf using `nano main.tf`
+
+Lets launch an ec2 instance with Terraform then, find the AMI id of your last successful build and replace it in the code below, add the whole block to you main.tf under the provider block:
+```
+# launch an instance
+resource "aws_instance" "app_instance" {
+  ami           = "yourami-id"
+  instance_type = "t2.micro"
+  associate_public_ip_address = true
+  key_name      = "your_key_name" 
+  tags = {
+      Name = "yourname-app"
+  }
+  key_name = "enter ssh key name the .pem file"
+}
+```
+
+#### Use this link to provide the rest of the steps here.
+ https://github.com/LSF970/NewDevOpsCurriculum/tree/master/06_IAC_Orchestration_Scaling_Monitoring/01_Terraform_intro
+
+
+
 
 ## Cheatsheet
 
